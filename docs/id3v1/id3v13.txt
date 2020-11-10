@@ -1,0 +1,259 @@
+                                ID3v1.3
+
+Introduction
+
+   There are a couple of ID3v1.1 standard extensions available on the
+   Internet: ID3v1.2 informal standard and enhanced tag. Both are aimed
+   to extend space for storing file metadata and have backward
+   compatibility with ID3v1.1.
+
+   However both of them have the same issue due to a similar design. If
+   ID3v1.2 or enhanced tag is considered as a regular ID3v1 tag (as most
+   of present ID3v1 parsers do), there will be a garbage at the end of
+   the file in case of tag removal. Thus, their compatibility with ID3v1
+   is not good enough, indeed.
+
+   That is why I was in thought how to improve ID3v1 without this
+   annoying side effect ;-) Yes, it was in 2009 when ID3v2 was already
+   invented and widely used. Please don't take the following text too
+   seriously. It is just for fun. But despite this I implemented this in
+   my id321 tool and maybe will use this tag format for my own MP3
+   collection. Moreover, judging by an information on the Internet,
+   there are some people in the world who still prefer ID3v1. Probably
+   they will find ID3v1.3 useful for their needs.
+
+   Well, it seems the only way to get some more space in ID3v1 is to
+   reuse padding space of the ID3v1 fields. Indeed, in the most cases
+   ID3v1 fields are not completely filled and it would be great if we
+   can use padding space of a field in order to extend length of another
+   field. All we need is a well-defined and unambiguous algorithm.
+
+   I had proceeded from the assumption that present ID3v1 parsers
+   consider null-byte in the field value as an end-of-string indicator.
+   In that case they will just ignore the padding space after
+   a null-byte and that is why we can painlessly use this space for our
+   improvement needs.
+
+Extension space
+
+   Now when the main idea is stated we can start defining details. We
+   will store continuation of truncated fields in the extension space.
+   The extension space is a virtual space which is mapped on the free
+   padding space of the following fields in this particular order
+
+   - comment
+   - title
+   - album
+   - artist
+   - year
+
+   This order is destined to minimize ID3v1.3 tag influence on sorting
+   files by ID3v1 tag contents in case of parser which uses whole field
+   content for sorting. Less significant fields from the sorting
+   perspective are reused first.
+
+   When the extension space is empty it MUST be filled by null-bytes.
+
+   For example if we have such tag (@ is a null-byte, capital letters T,
+   A, L, Y and C are also null-bytes, they are marked for explaination
+   needs)
+
+            012345678901234567890123456789
+   Title   :Bohemian Rhapsody@TTTTTTTTTTTT
+   Artist  :Queen@AAAAAAAAAAAAAAAAAAAAAAAA
+   Album   :Bohemian Rhapsody@LLLLLLLLLLLL
+   Year    :@YYY
+   Comment :Single@CCCCCCCCCCCCCCCCCCCCCCC
+   Genre   :#
+
+   The extension space will be the following (74 bytes):
+
+   01234567890123456789012345678901234567890123456789012345678901234567890123
+   CCCCCCCCCCCCCCCCCCCCCCCTTTTTTTTTTTTLLLLLLLLLLLLAAAAAAAAAAAAAAAAAAAAAAAAYYY
+
+   In order to minimize overhead truncated field will not contain
+   information about where to find its continuation. Moveover, it will
+   not contain any truncation indication at all.
+
+   When the comment has a length of 28 bytes there is no way to
+   distinguish whether it is a track number stored in 30th byte of the
+   comment field or a first byte of extension space. Because of that
+   ID3v1.3 tag MUST NOT use the comment field for the extension space
+   and MUST have a null-byte as 30th byte of the comment field if the
+   comment has a length of 28 bytes and the track number is not
+   specified.
+
+Field types
+
+   There are four expandable fields in ID3v1.3 tag:
+
+   - title
+   - artist
+   - album
+   - comment
+
+   Note that year is not an expandable field.
+
+   Fields are classified by length:
+
+   - Terminated field is a field which completely fits into available in
+     ID3v1 space including null-terminator byte. It is a certainly
+     non-truncated field, so we don't need to store information whether
+     it was truncated or not.
+   - Non-terminated field is a field which either was truncated or took
+     all available in ID3v1 space excluding null-terminator byte. If
+     there are more than one non-terminated expandable field information
+     about truncated ones has to be stored in the header.
+   - Extended field is an expandable non-terminated field which was
+     truncated. It has a continuation in the extension space.
+
+Header
+
+   All truncation information is contained by the one or two bytes at
+   the very beginning of the extension space called header. The header
+   has a floating format which depends on a couple of factors. The
+   general structure of the header is the following:
+
+   - bitmask of non-terminated expandable fields stores information
+     about which of non-terminated expandable fields was truncated. Its
+     size depends on number of terminated expandable fields.
+   - length of the first segment in the extension space (MUST be 0 if
+     there is the only segment)
+   - length of the second segment in the extension space (MUST be 0 if
+     there are only two segments)
+
+   NOT   NOE   MES      MSS   RBS   HF          Comments
+   4       0   119        0   0     none        pure ID3v1
+   3    0..1    90       90   0     none        no header needed since the most
+                                                here can be is the only segment
+                                                and its field can be
+                                                unambiguously identified as the
+                                                only non-terminated field
+   2    0..2    61   60..59   2     $FFLLLLLL
+   1    0..2    32   31..30   3     $FFFLLLLL   length is always zero since
+                                                the most here can be is the
+                                                only segment
+   1       3    32       28   3     $FFFLLLLL   2 bytes
+                                    $000SSSSS
+   0    0..2     3        2   4     $FFFFLLLL   only two bits can be set in FFFF
+
+   * NOT - Number of terminated exp. fields
+   * NOE - Number of extended fields
+   * MES - Max ext. size
+   * MSS - Max segm. size
+   * RBS - Required bitmask size (bits)
+   * HF  - Header format
+
+   LLLLLL is a length of the first segment in the extension space and
+   SSSSSS is a length of the second segment. The third segment does not
+   need an explicit length definition as it is always the last segment
+   and therefore it is terminated by null-byte or end-of-store.
+
+   FFFF can never has more than two bits set. Because in this case the
+   field year is the only donor for the expansion space and all it can
+   give is 3 bytes which are sufficient to store minimal data for up to
+   two fields only.
+
+Extension space segments order
+
+   In order to minimize overhead the ID3v1.3 tags have predefined order
+   of segments in the extension space.
+
+   - artist
+   - album
+   - title
+   - comment
+
+   It means that FFFF bits MUST be checked in this particular order
+   only.  First bit set means that the first segment is a continuation
+   of the its related field.  Second bit is for second segment etc.
+
+Summary
+
+   ID3v1.3 tag removes ID3v1.[01] tags limitation of 80 characters per
+   field being fully backward compatible with them. It still have i18n
+   issues and total fields length limitation, so in case of non-Latin1
+   characters it is still no fully self-describing and because of that
+   may be used in local environment only where encoding rules are stated
+   outside of tags.
+
+
+Examples
+
+   Notation:
+
+   @ = null-byte (0x0)
+   $ = header
+   # = some byte
+
+   Let's look at the examples from ID3v1 enhanced tag specification.
+
+   The tag with a long artist name.
+
+            012345678901234567890123456789
+   Title   :In The Ghetto@Delta@@@@@@@@@@@
+   Artist  :David Morales & The Bad Yard C
+   Album   :@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+   Year    :@@@@
+   Comment :@lub feat. Crystal Waters and
+   Genre   :#
+
+   The tag with a long song title.
+
+            012345678901234567890123456789
+   Title   :Barrel Of A Gun (United Nine I
+   Artist  :Depeche Mode@@@@@@@@@@@@@@@@@@
+   Album   :@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+   Year    :@@@@
+   Comment :@nch One Punch Mix)@@@@@@@@@@@
+   Genre   :#
+
+   Let's make it more complicated by adding a comment.
+
+            012345678901234567890123456789
+   Title   :Barrel Of A Gun (United Nine I
+   Artist  :Depeche Mode@@@@@@@@@@@@@@@@@@
+   Album   :@$nch One Punch Mix)@@@@@@@@@@
+   Year    :@@@@
+   Comment :Let's imagine the comment here
+   Genre   :#
+
+   Note that a header has appeared here at the very beginning of the
+   extension space because this tag has more than one (actually two:
+   title and comment) non-terminated expandable fields. The header
+   stores information about non-terminated expandable fields have to be
+   extended.
+
+   Let's make it yet more complicated by adding an album title.
+
+            012345678901234567890123456789
+   Title   :Barrel Of A Gun (United Nine I
+   Artist  :Depeche Mode@Mix)@@@@@@@@@@@@@
+   Album   :The best album@$nch One Punch
+   Year    :@@@@
+   Comment :Let's imagine the comment here
+   Genre   :#
+
+   ...by adding a track number (ID3v1.1).
+
+            012345678901234567890123456789
+   Title   :Barrel Of A Gun (United Nine I
+   Artist  :Depeche Mode@Mix)re@@@@@@@@@@@
+   Album   :The best album@$nch One Punch
+   Year    :@@@@
+   Comment :Let's imagine the comment he@#
+   Genre   :#
+
+   And finally let the tag fill all available for ID3v1 space.
+
+            012345678901234567890123456789
+   Title   :Barrel Of A Gun (United Nine I
+   Artist  :Depeche Mode@Mix)ong comment h
+   Album   :The best album@$nch One Punch
+   Year    :@ere
+   Comment :Let's imagine a really loooo@#
+   Genre   :#
+
+Copyright (c) 2009-2010 Vitaly Sinilin.
+
+* retrieved from <http://lib313.sourceforge.net/id3v13.html>
