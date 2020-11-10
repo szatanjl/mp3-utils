@@ -1,0 +1,102 @@
+                 ID3 TAG and Enhanced TAG specification
+
+What is a ID3 TAG:
+
+In short - it's an information which is located at the end of an MP3
+file and contains: artist name, song name, album name, year of
+releasing, music genre and a comment.  Detailed information below.
+
+
+Why we made Enhanced TAG:
+
+* longer strings: It's clear - 30 bytes in normal TAG aren't enough.  In
+  lot of genres like rock, pop, instrumental, vocal etc. you have enough
+  place in 99% of songnames & artists, but even 30 bytes for album name
+  can be not enough.  But if you like dance / house / trance / techno
+  / drum'n'bass / etc. you don't have enough place.  Don't you believe
+  me?  So look at some of your dance CDs - and you'll be in.  Artists
+  are usually DJs, there is still someone 'featuring'.  And with the
+  songnames it isn't better - even if you have a short songname there
+  can be name of the remix, name of remixer, and so on
+
+for example:
+Depeche Mode - Barrel Of A Gun (United Nine Inch One Punch Mix)
+               ^                            ^                 ^
+               1                            30                48   53!
+               *                            *                 *    *
+        Moby - All That I Need Is To Be Loved - Hard Trance Version
+  Diana Ross - Take Me Higher (Reverend Jefferson's Mash 'Em Up Mix)
+
+David Morales & The Bad Yard Club feat. Crystal Waters and Delta - In The Ghetto
+^                            ^                                 ^
+1                            30                                64!
+
+So this is clear I hope.
+
+* speed: Now the speed - this is useful when you're in some mood.  If
+  you're sad, or you just go to bed - you will propably prefer slow
+  relax music.  If you have some party at home maybe you want to play
+  some fast pieces.  And let's say your stuck somewhere in code and
+  angry of endless debugging - maybe some ultrafast hardcore will make
+  your adrenalin go away.  In this situations genres aren't enough - you
+  can have slow or fast rock, pop, drum'n'bass, house, etc.  Now I know
+  you understand this feature too.
+
+* genre: in this point, you're absolutely free.  If your player/playlist
+  maker doesn't support some genre and you definite must/want to have it
+  filled as accurately as possible - you have a problem.  Actually - you
+  HAD a problem.  Now you can type anything you want (30 characters).
+
+* start & end time: not yet supported by players, but be sure it will
+  be.  This was made because we are sick of some downloaded MP3 files.
+  Sometimes there is a noisy flick or burst in the beginning of the
+  file, sometimes there is needless long silence at the end.  Player
+  capable to handle this will save your time and nerves. Maybe there
+  will be option to fade-in in the start (it's not good to start in the
+  noisy part).
+
+* comment: wasn't enlarged.  We suppose currently used 30 bytes to be enough.
+
+
+How does the 'Enhanced TAG' work?
+
+Well the credo was 'As compatible as possible'.  That's why the 'TAG+'
+is in the front of 'TAG'. 'TAG+' writes to 'TAG' and if it overflows
+(the name/artist/album is too long to fit into 'TAG' space) then it
+writes to its own place.  So this mean that first 30 bytes are always in
+'TAG' and players/playlist makers which support 'TAG' are able to read
+it without any problems.  It's like long file names in Win95 - Windows
+read everything - in DOS you don't have all but still have enough to be
+oriented.  Genre2, speed, start & end time are always stored in 'TAG+'
+roo.  'TAG+' not supporting programs will ignore them.  In this solution
+you still have only one editbox for name, artist and album.
+
+                            TAG description:
+                    position: at the end of MP3 file
+
+        item         type     length (b)   must be
+        header       string     3          TAG
+        song name    string    30
+        artist       string    30
+        album name   string    30
+        year         string     4
+        comment      string    30
+        genre        byte       1          see genres
+        total                 128
+
+                       Enhanced TAG description:
+                     position: in the front of TAG
+
+        item         type     length (b)   must be
+        header       string     4          TAG+
+        song name    string    60
+        artist       string    60
+        album name   string    60
+        speed        byte       1          01=slow, 02=medium,
+                                           03=fast, 04=hardcore
+        genre        string    30
+        start time   string     6          mmm:ss
+        end time     string     6          mmm:ss
+        total                 227
+
+* retrieved from <http://www.fortunecity.com/underworld/sonic/3/id3tag.html>
