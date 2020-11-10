@@ -1,0 +1,206 @@
+                       ID3-Tag Specification V1.1
+
+   ID3-Tag Specification V1.1 (12 dec 1997) by Michael Mutschler
+   <amiga2@info2.rus.uni-stuttgart.de>, edited for space and clarity
+   reasons.
+
+
+Overview
+
+   The ID3-Tag is an information field for MPEG Layer 3 audio files.
+   Since a standalone MP3 doesn't provide a method of storing other
+   information than those directly needed for replay reasons, the
+   ID3-tag was invented by Eric Kemp in 1996.
+
+   A revision from ID3v1 to ID3v1.1 was made by Michael Mutschler to
+   support track number information is described below.
+
+
+ID3v1 Implementation
+
+   The Information is stored in the last 128 bytes of an MP3. The Tag
+   has got the following fields, and the offsets given here, are from
+   0-127.
+
+     Field      Length    Offsets
+     Tag        3           0-2
+     Songname   30          3-32
+     Artist     30         33-62
+     Album      30         63-92
+     Year       4          93-96
+     Comment    30         97-126
+     Genre      1           127
+
+
+   The string-fields contain ASCII-data, coded in ISO-Latin 1 codepage.
+   Strings which are smaller than the field length are padded with zero-
+   bytes.
+
+     Tag: The tag is valid if this field contains the string "TAG". This
+        has to be uppercase!
+
+     Songname: This field contains the title of the MP3 (string as
+        above).
+
+     Artist: This field contains the artist of the MP3 (string as above).
+
+     Album: this field contains the album where the MP3 comes from
+        (string as above).
+
+     Year: this field contains the year when this song has originally
+        been released (string as above).
+
+     Comment: this field contains a comment for the MP3 (string as
+        above). Revision to this field has been made in ID3v1.1.
+
+     Genre: this byte contains the offset of a genre in a predefined
+        list the byte is treated as an unsigned byte. The offset is
+        starting from 0.
+
+
+Genre List
+
+   The following genres is defined in ID3v1
+
+      0.Blues
+      1.Classic Rock
+      2.Country
+      3.Dance
+      4.Disco
+      5.Funk
+      6.Grunge
+      7.Hip-Hop
+      8.Jazz
+      9.Metal
+     10.New Age
+     11.Oldies
+     12.Other
+     13.Pop
+     14.R&B
+     15.Rap
+     16.Reggae
+     17.Rock
+     18.Techno
+     19.Industrial
+     20.Alternative
+     21.Ska
+     22.Death Metal
+     23.Pranks
+     24.Soundtrack
+     25.Euro-Techno
+     26.Ambient
+     27.Trip-Hop
+     28.Vocal
+     29.Jazz+Funk
+     30.Fusion
+     31.Trance
+     32.Classical
+     33.Instrumental
+     34.Acid
+     35.House
+     36.Game
+     37.Sound Clip
+     38.Gospel
+     39.Noise
+     40.AlternRock
+     41.Bass
+     42.Soul
+     43.Punk
+     44.Space
+     45.Meditative
+     46.Instrumental Pop
+     47.Instrumental Rock
+     48.Ethnic
+     49.Gothic
+     50.Darkwave
+     51.Techno-Industrial
+     52.Electronic
+     53.Pop-Folk
+     54.Eurodance
+     55.Dream
+     56.Southern Rock
+     57.Comedy
+     58.Cult
+     59.Gangsta
+     60.Top 40
+     61.Christian Rap
+     62.Pop/Funk
+     63.Jungle
+     64.Native American
+     65.Cabaret
+     66.New Wave
+     67.Psychadelic
+     68.Rave
+     69.Showtunes
+     70.Trailer
+     71.Lo-Fi
+     72.Tribal
+     73.Acid Punk
+     74.Acid Jazz
+     75.Polka
+     76.Retro
+     77.Musical
+     78.Rock & Roll
+     79.Hard Rock
+
+   The following genres are Winamp extensions
+
+     80.Folk
+     81.Folk-Rock
+     82.National Folk
+     83.Swing
+     84.Fast Fusion
+     85.Bebob
+     86.Latin
+     87.Revival
+     88.Celtic
+     89.Bluegrass
+     90.Avantgarde
+     91.Gothic Rock
+     92.Progressive Rock
+     93.Psychedelic Rock
+     94.Symphonic Rock
+     95.Slow Rock
+     96.Big Band
+     97.Chorus
+     98.Easy Listening
+     99.Acoustic
+    100.Humour
+    101.Speech
+    102.Chanson
+    103.Opera
+    104.Chamber Music
+    105.Sonata
+    106.Symphony
+    107.Booty Bass
+    108.Primus
+    109.Porn Groove
+    110.Satire
+    111.Slow Jam
+    112.Club
+    113.Tango
+    114.Samba
+    115.Folklore
+    116.Ballad
+    117.Power Ballad
+    118.Rhythmic Soul
+    119.Freestyle
+    120.Duet
+    121.Punk Rock
+    122.Drum Solo
+    123.A capella
+    124.Euro-House
+    125.Dance Hall
+
+
+Track addition - ID3v1.1
+
+   In ID3v1.1, Michael Mutschler revised the specification of the
+   comment field in order to implement the track number. The new format
+   of the comment field is a 28 character string followed by a mandatory
+   null ($00) character and the original album tracknumber stored as an
+   unsigned byte-size integer. In such cases where the 29th byte is not
+   the null character or when the 30th is a null character, the
+   tracknumber is to be considered undefined.
+
+* retrieved from [ID3v2 informal standard] appendix
